@@ -4,23 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CS416 Narrative Visualization - hhlim2</title>
-    <style>
-        body {
-            display: flex;
-            font-family: Arial, sans-serif;
-        }
-        .word-list {
-            width: 200px;
-            padding: 20px;
-            border-right: 1px solid #ccc;
-        }
-        .plot-area {
-            flex-grow: 1;
-            padding: 20px;
-        }
-        
-    </style>
-    <select id="selectButton"></select>
+
+  
     <input type="range" id="yearSlider" min="2004" max="2010" step="1" value="2004">
     <label id="yearLabel" for="yearSlider">Selected Year: 2004</label>
 </head>
@@ -34,141 +19,152 @@
         const slider = d3.select("#yearSlider");
         const yearLabel = d3.select("#yearLabel");
         var year = 2004
-        var current_data = "Violent Crime Rate"
-
-        displayPlot(current_data, String(current_data) + '.csv', year)
-
-        
-        
-        const words = [
-            {text: "Violent Crime Rate", csv : "Violent crime rate.csv"},
-            {text: "Unemployment Rate", csv: "Unemployment Rate.csv"},
-            {text: "Physical Inactivity Rate", csv: "Physical Inactivity Rate.csv"},
-            {text: "Adult Obesity Rate", csv: "Adult Obesity Rate.csv"},
- 
-        ];
-
-        //Drop down to select data
-        //https://d3-graph-gallery.com/graph/line_filter.html
-        d3.select("#selectButton")
-            .selectAll('myOptions')
-                .data(words.map(word => word.text))
-            .enter()
-                .append('option')
-            .text(function (d) { return d; }) // text showed in the menu
-            .attr("value", function (d) { return d; }) // corresponding value returned by the button
-        
-        
-        d3.select("#selectButton").on("change", function(d) {
-            // recover the option that has been chosen
-            var selectedOption = d3.select(this).property("value")
-            current_data = selectedOption
-            // run the updateChart function with this selected option
-            console.log(String(selectedOption) + '.csv')
-            displayPlot(selectedOption, String(selectedOption) + '.csv', year)
-            })
+  
+        displayPlot(year)
 
         //Set up slider and update plot if changed.=
         slider.on("input", function() {
             year = +this.value;
             yearLabel.text('Selected Year:' + year);
-            displayPlot(current_data, String(current_data) + '.csv', year)
+            displayPlot(year)
             });
-        
+ 
         //Funcation to update the plot when a new category is selected
-        function displayPlot(word, csv, year) {
+        function displayPlot(year) {
             // Clear the existing plot
             d3.select("#chart").selectAll("*").remove();
 
-            d3.csv(csv).then(function(data) {
-   
-                data.forEach(d => {
-                    d.year = +d.year_2;
-                    d.value = +d.Numerator / d.Denominator * 100;
-                    d.state = +d.State;
+            // script.js
+
+        // Load both CSV data files and create the chart
+        Promise.all([
+            d3.csv('Adult Obesity Rate.csv'),
+            d3.csv('Physical Inactivity Rate.csv')
+            ]).then(function(files) {
+                const obesity = files[0];
+                const inactivity = files[1];
+
+            // Convert year and value to appropriate types
+            obesity.forEach(d => {
+                d.year = +d.year_2;
+                d.value = +d.Numerator / d.Denominator * 100;
+                d.state = +d.State;
+            });
+
+            const filteredObesity = obesity.filter(d => d.year === year);
+            inactivity.forEach(d => {
+                d.year = +d.year_2;
+                d.value = +d.Numerator / d.Denominator * 100;
+                d.state = +d.State;
+            });
+            const filteredInactivity = inactivity.filter(d => d.year === year);
+            console.log(filteredInactivity)
+
+
+            // Combine data into a single array with categories
+            const combinedData = [];
+            filteredObesity.forEach((d, i) => {
+                combinedData.push({year: d.year, category: 'Adult Obesity', value: d.value});
+                combinedData.push({year: inactivity[i].year, category: 'Physical Inactivity', value: filteredInactivity[i].value});
+            });
+
+            // Set up dimensions for the chart
+            const margin = { top: 40, right: 30, bottom: 70, left: 40 };
+            const width = 2*(800 - margin.left - margin.right);
+            const height = 500 - margin.top - margin.bottom;
+
+            // Create SVG element
+            const svg = d3.select("#chart")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // Define scales
+            const x0 = d3.scaleBand()
+                .domain(filteredObesity.map(d => d.State))
+                .rangeRound([0, width])
+                .paddingInner(0.1);
+
+            const x1 = d3.scaleBand()
+                .domain(['Adult Obesity', 'Physical Inactivity'])
+                .rangeRound([0, x0.bandwidth()])
+                .padding(0.05);
+
+            const yScale = d3.scaleLinear()
+                .domain([0, 100])
+                .nice()
+                .range([height, 0]);
             
-                });
-                console.log(data)
+            //color bars
+            const color = d3.scaleOrdinal()
+                .domain(['Adult Obesity', 'Physical Inactivity'])
+                .range(['steelblue', 'darkorange']);
 
-                const filteredData = data.filter(d => d.year === year);
-                console.log(filteredData)
-                // 3. Create SVG elements (e.g., circles)
-                const margin = { top: 20, right: 30, bottom: 30, left: 40 };
-                const width = 600 - margin.left - margin.right;
-                const height = 400 - margin.top - margin.bottom;
-
-                // Create SVG element for bar chart
-                const svg = d3.select("#chart")
-                    .append("svg")
-                    .attr("width", width + margin.left + margin.right)
-                    .attr("height", height + margin.top + margin.bottom)
-                    .append("g")
-                    .attr("transform", `translate(${margin.left},${margin.top})`);
-
-                
-                const xScale = d3.scaleBand()
-                    .domain(filteredData.map(d => d.State))
-                    .range([0, width])
-                    .padding(0.1);
-
-                const yScale = d3.scaleLinear()
-                    //.domain([0, d3.max(filteredData, d => d.value)])
-                    .domain([0, 40])
-                    .nice()
-                    .range([height, 0]);
-
-                // Draw bar chart
-                svg.selectAll(".bar")
-                    .data(filteredData)
-                    .enter().append("rect")
-                    .attr("class", "bar")
-                    .attr("x", d => xScale(d.State))
-                    .attr("width", xScale.bandwidth())
-                    .attr("y", d => yScale(d.value))
-                    .attr("height", d => height - yScale(d.value))
-                    .on("mouseover", function(event, d) {
-                    // Show tooltip on mouseover
-                    //https://stackoverflow.com/questions/61031990/how-to-make-tooltips-show-up-in-d3-js-on-mouseover-and-be-removed-at-mouseout
-                    const tooltip = d3.select("#tooltip").append("div");
+            //draw bar chart
+            svg.selectAll("g")
+                .data(filteredObesity)
+                .enter().append("g")
+                .attr("transform", d => `translate(${x0(d.State)},0)`)
+                .selectAll("rect")
+                .data(d => [
+                    {category: 'Adult Obesity', value: d.value, state: d.State},
+                    {category: 'Physical Inactivity', value: filteredInactivity.find(e => e.year === d.year).value, state: d.State}
+                    
+                ])
+                .enter().append("rect")
+                .attr("x", d => x1(d.category))
+                .attr("y", d => yScale(d.value))
+                .attr("width", x1.bandwidth())
+                .attr("height", d => height - yScale(d.value))
+                .attr("fill", d => color(d.category))
+                // show tooltip on mouseover
+                .on("mouseover", function(event, d) {
+             
+                const tooltip = d3.select("#tooltip").append("div");
                     tooltip.style("visibility", "visible")
                     .style("left", (d3.event.pageX) + "px").style("top", (d3.event.pageY) + "px"); })
                     .on('mouseover', (d, i) => {  tooltip.transition().duration(200).style("opacity", .9);      
-                    tooltip.html(word + ' For ' + d.State + ':' + String(d.value).slice(0,4) + '%')
+                    tooltip.html(d.state + ' ' + d.category +  ':' + String(d.value).slice(0,4) + '%')
+                    console.log(d)
                     })
                     .on('mouseout', d => {
                     tooltip.transition() .duration(500) .style("opacity", 0);
                     });
+
+                    
           
                     // Tooltip div
                     const tooltip = d3.select("body").append("div")
                         .attr("class", "tooltip")
                         .style("opacity", 0);
 
-                // Add axes
-                //https://stackoverflow.com/questions/11252753/rotate-x-axis-text-in-d3
-                svg.append("g")
-                    .attr("class", "x-axis")
-                    .attr("transform", `translate(0, ${height})`)
-                    .call(d3.axisBottom(xScale))
-                    .selectAll("text")  
-                    .style("text-anchor", "end")
-                    .attr("dx", "-.8em")
-                    .attr("dy", ".15em")
-                    .attr("transform", "rotate(-65)");
-           
+            // Add x-axis with rotated labels
+            svg.append("g")
+                .attr("class", "x-axis")
+                .attr("transform", `translate(0, ${height})`)
+                .call(d3.axisBottom(x0))
+                .selectAll("text")
+                .style("text-anchor", "end")
+                .attr("dx", "-0.8em")
+                .attr("dy", "0.15em")
+                .attr("transform", "rotate(-45)");
 
-                svg.append("g")
-                    .attr("class", "y-axis")
-                    .call(d3.axisLeft(yScale));
-                
-                //Add Title
-                svg.append("text")
-                .attr("x", 300)
-                .attr("y", 20)
+            // Add y-axis
+            svg.append("g")
+                .attr("class", "y-axis")
+                .call(d3.axisLeft(yScale));
+
+
+            // Add chart title
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", 0 - (margin.top / 2))
                 .attr("text-anchor", "middle")
                 .style("font-size", "16px")
-                .text(word + " By State For Year: " + year);  // Display the clicked word
-            });
+                .text(`Adult Obesity Rate and Physical Inactivity Rate By State Per Year`);
+        });
 
 
             
