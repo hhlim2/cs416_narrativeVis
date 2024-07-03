@@ -250,30 +250,7 @@
                 .style("font-size", "16px")
                 .text(`States with Highest Physical Inactivity Rates: ${PI_states}`);
 
-
-            // setup legend
-            // const legend = svg.selectAll(".legend")
-            //     .data(['Adult Obesity', 'Physical Inactivity'])
-            //     .enter().append("g")
-            //     .attr("class", "legend")
-            //     .attr("transform", (d, i) => `translate(0,${i * 20})`);
-
-            // legend.append("rect")
-            //     .attr("x", width - 18)
-            //     .attr("width", 18)
-            //     .attr("height", 18)
-            //     .style("fill", color);
-
-            // legend.append("text")
-            //     .attr("x", width - 24)
-            //     .attr("y", 9)
-            //     .attr("dy", ".35em")
-            //     .style("text-anchor", "end")
-            //     .text(d => d);
-            //     };
-
-        
-
+            //https://d3-graph-gallery.com/graph/custom_legend.html
             svg.append("circle").attr("cx",width-150).attr("cy",25).attr("r", 6).style("fill", "blue")
             svg.append("circle").attr("cx",width - 150).attr("cy",40).attr("r", 6).style("fill", "orange")
             svg.append("text").attr("x", width-140).attr("y", 25).text("Adult Obesity").style("font-size", "15px").attr("alignment-baseline","middle")
