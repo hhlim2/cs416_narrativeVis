@@ -250,6 +250,7 @@
                 .style("font-size", "16px")
                 .text(`States with Highest Physical Inactivity Rates: ${PI_states}`);
 
+            //setup legend
             //https://d3-graph-gallery.com/graph/custom_legend.html
             svg.append("circle").attr("cx",width-150).attr("cy",25).attr("r", 6).style("fill", "blue")
             svg.append("circle").attr("cx",width - 150).attr("cy",40).attr("r", 6).style("fill", "orange")
